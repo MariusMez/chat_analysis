@@ -1,4 +1,5 @@
 import re
+import dateparser
 import pandas   as pd
 import numpy    as np
 
@@ -35,7 +36,7 @@ def import_data(file, path = ''):
             # Some messages are not sent by the user, 
             # but are simply comments and therefore need to be removed
             try:
-                name = message.split(' - ')[1].split(':')[0]
+                name = message.split('] ')[1].split(':')[0]
             except:
                 continue
 
@@ -134,15 +135,7 @@ def preprocess_data(df, min_messages=10):
     df = df.drop(indices_to_remove)
     
     # Extract Time
-    df['Date'] = df.apply(lambda row: row['Message_Raw'].split(' - ')[0], axis = 1)
-    
-    if '/' in str(df.iloc[df.index[0]].Date):
-        df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)
-    else:
-        if ',' in str(df.iloc[df.index[0]].Date):
-            df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)
-        else:
-            df['Date'] = pd.to_datetime(df['Date'], infer_datetime_format=True)
+    df['Date'] = df.apply(lambda row: dateparser.parse(row['Message_Raw'].split(']')[0].replace("[", "")), axis = 1)
     
     # Extact Day of the Week
     df['Hour'] = df.apply(lambda row: row.Date.hour, axis = 1)

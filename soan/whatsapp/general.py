@@ -367,6 +367,24 @@ def get_words_love(row):
     for words in set_words:
         if all(word in row.Message_Only_Text.split(' ') for word in words):
             return 1
+
+    # Check also for a combination of two words
+    # This can be expanded when necessary and easily removed
+    words = [['je'], ['aime', 'taime', "t'aime"]]
+    set_words = list(itertools.product(*words))
+
+    for words in set_words:
+        if all(word in row.Message_Only_Text.split(' ') for word in words):
+            return 1
+
+    # Check also for a combination of two words
+    # This can be expanded when necessary and easily removed
+    words = [['te'], ['quiero']]
+    set_words = list(itertools.product(*words))
+
+    for words in set_words:
+        if all(word in row.Message_Only_Text.split(' ') for word in words):
+            return 1
     
     return 0 
         
