@@ -1,13 +1,12 @@
-import datetime
+import numpy as np
 
-import numpy    as np
+from operator import gt, lt
 
-import matplotlib.pyplot      as plt
-import matplotlib.dates       as mdates
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.lines import Line2D
 
-from operator                 import gt, lt
-from matplotlib.lines         import Line2D
-from matplotlib.offsetbox     import OffsetImage, AnnotationBbox
 
 def print_title(string, nr_tabs=0, symbol='#', head=True):
     """ Prints a title for the stats to be shown
@@ -35,9 +34,9 @@ def print_title(string, nr_tabs=0, symbol='#', head=True):
     
     """
     length = len(string)
-    
+
     nr_tabs = '\t' * nr_tabs
-    
+
     if head:
         print(nr_tabs + symbol * length + symbol * 6)
         print(nr_tabs + symbol * 2 + ' ' + string + ' ' + 2 * symbol)
@@ -45,7 +44,8 @@ def print_title(string, nr_tabs=0, symbol='#', head=True):
     else:
         print(nr_tabs + 3 * ' ' + string + ' ' * 3)
         print(nr_tabs + symbol * length + symbol * 6)
-        
+
+
 def print_avg_sentiment(df):
     """ Prints the average sentiment per user
     
@@ -56,13 +56,14 @@ def print_avg_sentiment(df):
         'Sentiment' that has a value between -1 and 1
         
     """
-    
+
     # Prints the average sentiment per user
     print_title('Average Sentiment', 3)
     for user in df.User.unique():
         avg_sentiment = round(np.mean(df[df.User == user]['Sentiment']), 3)
         print('{0: <30}'.format(user + ':') + '\t\t' + str(avg_sentiment))
     print('\n\n')
+
 
 def print_sentiment(df):
     """ Prints 5 random positive and negative messages
@@ -79,7 +80,7 @@ def print_sentiment(df):
         ranging from -1 to 1. 
     
     """
-    
+
     # Prints 5 random positive and negative messages
     # Many are labelled with a 1 or -1, so getting the most
     # neg or pos messages will be too much
@@ -87,16 +88,15 @@ def print_sentiment(df):
         print_title(sentiment + " Messages", 4)
 
         for user in df.User.unique():
-            print_title(user+' Messages', 0, '-', head=True)
-
+            print_title(user + ' Messages', 0, '-', head=True)
 
             if sentiment == 'Positive':
-                temp = df[(df['Sentiment'] > 0.8) & (df.Message_Clean.str.len() > 10) & 
-                            (df.User == user)]
+                temp = df[(df['Sentiment'] > 0.8) & (df.Message_Clean.str.len() > 10) &
+                          (df.User == user)]
             else:
-                temp = df[(df['Sentiment'] < -0.3) & (df.Message_Clean.str.len() > 10) & 
-                            (df.User == user)]
-                
+                temp = df[(df['Sentiment'] < -0.3) & (df.Message_Clean.str.len() > 10) &
+                          (df.User == user)]
+
             word_list = []
             for index, row in temp.iterrows():
                 word_list.append(row.Message_Clean)
@@ -107,7 +107,8 @@ def print_sentiment(df):
                 del word_list[random_value]
                 print()
         print()
-        
+
+
 def plot_sentiment(df, colors=None, savefig=False):
     """ Plots the weekly average sentiment over 
     time per user
@@ -127,17 +128,17 @@ def plot_sentiment(df, colors=None, savefig=False):
     """
     if not colors:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color'] * 10
-    
+
     # Resample to a week by summing
     df = df.set_index('Date')
     users = {}
-    
+
     for user in df.User.unique():
         users[user] = df[df.User == user]
         users[user] = users[user].resample('7D').mean().reset_index()
 
         # Fill in missing values by taking the average of previous/next
-        users[user]['Sentiment']  = users[user]['Sentiment'].interpolate()
+        users[user]['Sentiment'] = users[user]['Sentiment'].interpolate()
 
     # Create figure and plot lines
     fig, ax = plt.subplots()
@@ -165,9 +166,9 @@ def plot_sentiment(df, colors=None, savefig=False):
     # plt.axvline(datetime.date(2016, 8, 15), color='black', lw=7)
 
     # Setting emojis as y-axis
-    font = {'fontname':'DejaVu Sans', 'fontsize':22}
+    font = {'fontname': 'DejaVu Sans', 'fontsize': 22}
     ax.set_yticks([-1, 0, 1])
-    ax.set_yticklabels(['\U0001f62D','\U0001f610','\U0001f604'], **font)
+    ax.set_yticklabels(['\U0001f62D', '\U0001f610', '\U0001f604'], **font)
 
     # Set ticks to display month and year
     monthyearFmt = mdates.DateFormatter('%B %Y')
@@ -175,13 +176,13 @@ def plot_sentiment(df, colors=None, savefig=False):
     plt.xticks(rotation=40)
 
     # Create legend    
-    font = {'fontname':'Comic Sans MS', 'fontsize':24}
+    font = {'fontname': 'Montserrat', 'fontsize': 24}
     ax.legend(handles=legend_elements, bbox_to_anchor=(0.9, 1), loc=2, borderaxespad=0.)
     ax.set_title('Positivity of Messages', **font)
 
     # Set size of graph
     fig.set_size_inches(13, 5)
     fig.tight_layout()
-    
+
     if savefig:
         fig.savefig('results/sentiment.png', dpi=300)

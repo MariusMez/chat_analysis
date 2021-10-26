@@ -1,14 +1,14 @@
 import random
-import numpy       as np
-from PIL                                   import Image
-from wordcloud                             import WordCloud
-from palettable.colorbrewer.qualitative    import Dark2_8
+import numpy as np
+from PIL import Image
+from wordcloud import WordCloud
+from palettable.colorbrewer.qualitative import Dark2_8
 
 
 def color_func(word, font_size, position, orientation, random_state=None, **kwargs):
     """ To create nice looking random colors
     """
-    return tuple(Dark2_8.colors[random.randint(0,7)])
+    return tuple(Dark2_8.colors[random.randint(0, 7)])
 
 
 def create_wordcloud(data, cmap=None, savefig=False, name=None, **kwargs):
@@ -34,36 +34,37 @@ def create_wordcloud(data, cmap=None, savefig=False, name=None, **kwargs):
     PIL.Image.Image
         An image as presented in PIL (Pillow)
     """
-    
+
     # Add mask if present
     if 'mask' in kwargs.keys():
         kwargs['mask'] = np.array(Image.open(kwargs['mask']))
-    
+
     # Add stopwords if present
     if 'stopwords' in kwargs.keys():
         with open(kwargs['stopwords']) as outfile:
             stop_words = outfile.read().split('\n')
-            stop_words.extend(['https', 'youtu', '\\n', '\\u', 'http', 'don', 'didn'])        
+            stop_words.extend(['https', 'youtu', '\\n', '\\u', 'http', 'don', 'didn'])
         kwargs['stopwords'] = stop_words
-    
+
     # Create Word Cloud
-    wc = WordCloud(background_color="white", mode='RGBA', collocations = True, **kwargs)
-    
+    wc = WordCloud(background_color="white", mode='RGBA', collocations=True, **kwargs)
+
     if type(data) != dict:
         text = ' '.join(data)
         wc.generate_from_text(text)
     else:
         wc.generate_from_frequencies(data)
-    
+
     if not cmap:
         wc.recolor(color_func=color_func, random_state=kwargs['random_state'])
     else:
         wc.recolor(colormap=cmap, random_state=kwargs['random_state'])
-        
+
     if savefig:
         wc.to_file(f"results/wordcloud_{name}.png")
     else:
         return wc.to_image()
+
 
 def extract_sentiment_count(counts, user):
     """ Extract and return counts of negative and positive words
@@ -87,7 +88,7 @@ def extract_sentiment_count(counts, user):
         Contains counts of positive words used and
         counts of negative words used
     """
-    
+
     counts_dict = counts[['Word', user]].set_index('Word').to_dict()[user]
     counts_dict = {key: value for key, value in counts_dict.items() if value > 0}
 
@@ -99,5 +100,5 @@ def extract_sentiment_count(counts, user):
             negative[word] = counts_dict[word]
         if sentiment_nl(word)[0] > 0:
             positive[word] = counts_dict[word]
-            
+
     return positive, negative

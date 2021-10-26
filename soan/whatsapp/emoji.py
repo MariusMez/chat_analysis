@@ -1,17 +1,18 @@
 import re
-import regex 
+import regex
 import operator
 
-import emoji                as emoji_package
-import numpy                as np
-import matplotlib.pyplot    as plt
-import seaborn              as sns
+import emoji as emoji_package
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-from collections            import Counter
+from collections import Counter
 
-sns.reset_orig() # Importing seaborn changes matplotlib look
+sns.reset_orig()  # Importing seaborn changes matplotlib look
 
-def count_emojis(df, non_unicode = False):
+
+def count_emojis(df, non_unicode=False):
     """ Calculates how often emojis are used between users
     
     Parameters:
@@ -26,7 +27,7 @@ def count_emojis(df, non_unicode = False):
     emoji_all : dictionary of Counters
         Indicating which emojis are often used by which user
     """
-    
+
     emoji_all = {}
 
     # Count all "actual" emojis and not yet text smileys
@@ -37,7 +38,7 @@ def count_emojis(df, non_unicode = False):
 
         # Go over all set of emojis
         for emojis, count in temp_user.items():
-            
+
             # Create a list of emojis
             emojis = regex.findall(r'\p{So}\p{Sk}*', emojis)
 
@@ -45,13 +46,12 @@ def count_emojis(df, non_unicode = False):
             for emoji_value in emojis:
 
                 # Skip empty values
-                if emoji_value != '':     
+                if emoji_value != '':
                     try:
                         emoji_all[user][emoji_value] += count
                     except:
                         emoji_all[user][emoji_value] = count
 
-                        
     # Count non-unicode smileys
     if non_unicode:
         for user in df.User.unique():
@@ -62,9 +62,10 @@ def count_emojis(df, non_unicode = False):
                         try:
                             emoji_all[user][some_emoji] += 1
                         except:
-                            emoji_all[user][some_emoji] = 1        
+                            emoji_all[user][some_emoji] = 1
 
     return emoji_all
+
 
 def get_unique_emojis(df, counts, list_of_words):
     """ Uses TF-IDF to calculate which emoji are unique to
@@ -94,21 +95,21 @@ def get_unique_emojis(df, counts, list_of_words):
     """
     tf_idf_dict = {user: {} for user in df.User.unique()}
     unique_dict = {user: {} for user in df.User.unique()}
-    
+
     # Calculate TF-IDF for all smileys in that date range that were used
     # TF_IDF = (t_user + 1) / (words_user + 1) * log(sum_messages / t_all)
     for user in df.User.unique():
         for word in list_of_words:
-            
+
             # Not all users may have said this word
             try:
                 t_user = counts[user][str(word)]
             except:
                 t_user = 0
-              
+
             words_user = len(df[df.User == user])
             sum_messages = len(df)
-            
+
             # Calculate t_all by trying to add the counts together
             # could be that a user doesnt use a smiley
             t_all = 0
@@ -117,11 +118,11 @@ def get_unique_emojis(df, counts, list_of_words):
                     t_all += counts[user_2][str(word)]
                 except:
                     t_all += 0
-            
+
             # Calculate tf_idf and add it to the records
             tf_idf = (t_user + 1) / (words_user + 1) * np.log(sum_messages / t_all)
             tf_idf_dict[user][word] = tf_idf
-                 
+
     # Calculate Unique words based on tf_idf
     # word_uniqueness = tf_idf_user / (tf_idf_all - tf_idf_user)
     for user in df.User.unique():
@@ -129,7 +130,7 @@ def get_unique_emojis(df, counts, list_of_words):
             tf_idf_user = tf_idf_dict[user][word]
             tf_idf_all = sum([tf_idf_dict[u][word] for u in df.User.unique()])
             unique_dict[user][word] = tf_idf_user / (tf_idf_all - tf_idf_user)
-    
+
     return unique_dict
 
 
@@ -137,6 +138,7 @@ def extract_emojis(str):
     """ Used to extract emojis from a string using the emoji package
     """
     return ''.join(c for c in str if c in emoji_package.UNICODE_EMOJI)
+
 
 def prepare_data(df):
     """ Prepares the data by extracting and 
@@ -158,19 +160,19 @@ def prepare_data(df):
         the added columns containing information about emoji use
     
     """
-    
+
     # Extract unicode emojis per message and count them
-    df['Emoji'] = df.apply(lambda row: extract_emojis(str(row.Message_Clean)), 
-                                       axis = 1)
-    df['Emoji_Count'] = df.apply(lambda row: len(regex.findall(r'\p{So}\p{Sk}*', 
-                                                                           row.Emoji)), axis = 1)
-    
+    df['Emoji'] = df.apply(lambda row: extract_emojis(str(row.Message_Clean)),
+                           axis=1)
+    df['Emoji_Count'] = df.apply(lambda row: len(regex.findall(r'\p{So}\p{Sk}*',
+                                                               row.Emoji)), axis=1)
+
     # Find non-unicode smileys
     eyes, noses, mouths = r":;8BX=", r"-~'^", r")(/\|DPp"
     pattern = "[%s][%s]?[%s]" % tuple(map(re.escape, [eyes, noses, mouths]))
-    df['Different_Emojis'] = df.apply(lambda row: re.findall(pattern, str(row.Message_Clean)), 
-                                                  axis=1)
-    
+    df['Different_Emojis'] = df.apply(lambda row: re.findall(pattern, str(row.Message_Clean)),
+                                      axis=1)
+
     return df
 
 
@@ -190,12 +192,12 @@ def print_stats(unique_emoji, counts, save=False):
         file = open("results/emoji.txt", "a")
     else:
         file = None
-    
+
     print("#############################", file=file)
     print("### Unique Emoji (TF-IDF) ###", file=file)
     print("#############################", file=file)
     print(file=file)
-    
+
     for user in unique_emoji.keys():
         print(user, file=file)
         unique_emoji[user] = Counter(unique_emoji[user])
@@ -207,7 +209,7 @@ def print_stats(unique_emoji, counts, save=False):
     print("### Most Common Emoji ###", file=file)
     print("#########################", file=file)
     print(file=file)
-    
+
     for user in counts.keys():
         print(user, file=file)
         counts[user] = Counter(counts[user])
@@ -234,8 +236,8 @@ def plot_counts(counts, user, savefig=False):
     # Plot figure
     fig, ax = plt.subplots()
     fig.set_size_inches(10, 8)
-    bars = ax.bar(x, y,fc='#90C3D4', ec='#90C3D4', linewidth=3, width=.8, zorder=11)
-    
+    bars = ax.bar(x, y, fc='#90C3D4', ec='#90C3D4', linewidth=3, width=.8, zorder=11)
+
     # Remove spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -243,7 +245,7 @@ def plot_counts(counts, user, savefig=False):
     ax.yaxis.set_tick_params(labelsize=10)
     ax.xaxis.set_tick_params(labelsize=0)
     plt.xticks([])
-    
+
     # Set labels
     ax.set_ylabel('Nr Words')
     plt.title("Most often used Emoji")
@@ -266,7 +268,7 @@ def plot_counts(counts, user, savefig=False):
     else:
         plt.show()
 
-    
+
 def plot_corr_matrix(df, user, list_of_words, counts):
     """ Plots a correlation matrix for the most commonly
     used emoji for a single user. 
@@ -288,7 +290,7 @@ def plot_corr_matrix(df, user, list_of_words, counts):
         Indicating which emojis are often used by which user
     
     """
-    
+
     # Create a dataframe with as columns all emoji and rows are counts of emoji
     df = df[df.User == user].copy()
 
@@ -302,7 +304,7 @@ def plot_corr_matrix(df, user, list_of_words, counts):
     most_common = [emoji for emoji, _ in total_counts.most_common()][:15]
     df = df[most_common]
     df = df.T.drop_duplicates().T
-    
+
     # Plot Correlation Matrix
     sns.set(style="white")
     sns.set_style({"font.sans-serif": "DejaVu Sans"})
